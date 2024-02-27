@@ -1,0 +1,4 @@
+EntropyHub==0.2
+NNetEn==1.0.8
+numpy==1.26.4
+ts2vg==1.2.3
