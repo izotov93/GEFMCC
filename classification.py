@@ -1,5 +1,29 @@
 import numpy as np
 import os
+import time
+
+
+def format_time(seconds):
+    """
+    Formatting the time value for output
+        :param seconds: seconds value
+        :return: String with formatted time value
+    """
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    d, h = divmod(h, 24)
+
+    time_str = ""
+    if d > 0:
+        time_str += f"{int(d)} days "
+    if h > 0:
+        time_str += f"{int(h)} hours "
+    if m > 0:
+        time_str += f"{int(m)} minutes "
+    if s > 0:
+        time_str += f"{int(s)} sec."
+
+    return time_str
 
 
 def calculate_mcc(data: np.ndarray, data_pred: np.ndarray) -> (float, float):
@@ -51,6 +75,8 @@ def global_calculate_gefmcc(conf: dict):
     print('---------------------')
     print('START Calculating GEFMCC')
 
+    start_time = time.time()
+
     name_map = conf['config_entropy']['use_chaotic_map']
     config_map = conf['config_gen'].get(name_map, None)
 
@@ -73,7 +99,8 @@ def global_calculate_gefmcc(conf: dict):
     entropy_name = conf['config_entropy']['type_entropy']
 
     for i in range(len_h_values):
-        path = f'{entropy_name}/{HVD}/{name_map}/{i + 1}_{name_map}_{HVD}_{entropy_name}.txt'
+        path = (f'{name_map}_entropy/{entropy_name}/{HVD}/'
+                f'{i + 1}_{name_map}_{HVD}_{entropy_name}.txt')
         if os.path.isfile(path):
             entropy_values = np.loadtxt(path)
         else:
@@ -87,14 +114,21 @@ def global_calculate_gefmcc(conf: dict):
     GEFMCC = np.mean(np.abs(MCC_M[1:]))
     print(f'GEFMCC: {GEFMCC:.4f} [{name_map}_{entropy_name}_{HVD}]')
 
+    str_time = format_time(time.time() - start_time)
+    print(f'Calculation time {str_time}')
+
+    directory_name = f'{name_map}_classifier'
+    os.makedirs(directory_name, exist_ok=True)
+
     # Save to file
-    out_file_name = f'MCC_{name_map}_{entropy_name}_{HVD}.txt'
+    out_file_name = f'{directory_name}/{name_map}_GEFMCC_{entropy_name}_{HVD}.txt'
     with open(out_file_name, 'w') as file:
         file.write(f'{name_map}_{entropy_name}_{HVD}\n')
-        file.write(f'GEFMCC: {GEFMCC:.4f}\n\n')
+        file.write(f'GEFMCC: {GEFMCC:.4f}\n')
+        file.write(f'Calculation time: {str_time}\n\n')
+
         for i in range(1, len_h_values):
             file.write(f'{h_values[i]:.6f}\t{MCC_M[i]:.6f}\t{Uth_M[i]:.6f}\n')
-
     print(f'Result file {out_file_name} saved')
 
     return GEFMCC

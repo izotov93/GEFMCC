@@ -6,7 +6,6 @@ from multiprocessing import Pool
 from transform import generate_hvg_series
 from itertools import repeat
 
-
 config = {
     'directory_name': 'sin_map',
     'fuzz_dim': 1,
@@ -91,30 +90,36 @@ def calculation_entropy(file: str, conf: dict):
     if conf['transform'] == 'hvg':
         data = generate_hvg_series(data)
         file_name += '_hvg'
-        path_type = 'hvg'
+
+        transform_dir = f"{conf['use_chaotic_map']}_transform/{conf['transform']}"
+        os.makedirs(transform_dir, exist_ok=True)
+
+        np.savetxt(os.path.join(transform_dir, file_name + '.txt'),
+                   data, delimiter=' ', newline='\n', fmt='%g')
         print('Generate hvg series finished')
+
     elif conf['transform'] == 'no_hvg':
         file_name += '_no_hvg'
-        path_type = 'no_hvg'
     else:
         print('Wrong parameter - transform')
         exit(0)
 
     if conf['type_entropy'] == 'fuzzy':
         result = calculate_fuzzy_entropy(data, **conf['fuzzyen_params'])
-        file_name += '_fuzzy'
     elif conf['type_entropy'] == 'nneten':
         result = calculate_nneten_entropy(data, **conf['nneten_params'])
-        file_name += '_nneten'
     else:
         print('Wrong parameter type_entropy')
         exit(0)
 
-    result_dir = os.path.join(conf['type_entropy'], path_type,
-                              os.path.basename(os.path.dirname(file)))
-    os.makedirs(result_dir, exist_ok=True)
+    file_name += f"_{conf['type_entropy']}"
 
-    np.savetxt(os.path.join(result_dir, file_name + '.txt'), result,
+    entropy_dir = (f"{conf['use_chaotic_map']}_entropy/"
+                   f"{conf['type_entropy']}/{conf['transform']}")
+
+    os.makedirs(entropy_dir, exist_ok=True)
+
+    np.savetxt(os.path.join(entropy_dir, file_name + '.txt'), result,
                delimiter='\n', newline='\n', fmt='%g')
     print('File {} completed'.format(file_name))
 

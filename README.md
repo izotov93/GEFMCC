@@ -42,6 +42,7 @@ To install the package run the following command:
 ```shell
 pip install -r requirements.txt
 ```
+Please note, the libraries used in the project are supported by **Python ver. 3.9 - 3.11**.
 
 ## How to use
 

@@ -1,8 +1,7 @@
 import map_generate
 import entropy
 import classification
-from collections import defaultdict
-import numpy as np
+import time
 
 base_config = {
     'config_gen': {
@@ -72,7 +71,7 @@ base_config = {
 
 def general_calculation_all_parameters(conf: dict):
     result_dict = dict()
-    intermediate_values = defaultdict(list)
+    start_time = time.time()
 
     for chaotic_map in ['sin_map', 'log_map', 'plank_map', 'tmbm_map']:
         conf['config_entropy']['use_chaotic_map'] = chaotic_map
@@ -86,21 +85,32 @@ def general_calculation_all_parameters(conf: dict):
                 conf['config_entropy']['transform'] = trans
                 entropy.global_calculate_entropy(conf)
 
-                key = f"{type_ent}_{chaotic_map}_{trans}"
+                key_prim = f"{type_ent}_{trans}"
+                key_second = f"{type_ent}_{chaotic_map}_{trans}"
                 value = classification.global_calculate_gefmcc(conf)
-                result_dict[key] = value
 
-                intermediate_key = f"average_{type_ent}_{trans}"
-                intermediate_values[intermediate_key].append(value)
+                if result_dict.get(key_prim, None) is not None:
+                    result_dict[key_prim][key_second] = value
+                else:
+                    result_dict[key_prim] = {key_second: value}
 
-    for key, values in intermediate_values.items():
-        average_value = np.mean(values)
-        result_dict[key] = average_value
+    final_file_name = 'average_GEFMCC.txt'
+    final_str_time = classification.format_time(time.time() - start_time)
 
-    with open('average_GEFMCC.txt', 'w') as file:
-        file.write(f'GEFMCC Value\n\n')
-        for key, value in result_dict.items():
-            file.write(f'{key}\t{value:.6f}\n')
+    with open(final_file_name, 'w') as file:
+        file.write('Global Efficiency of entropy calculated using '
+                   'Matthews Correlation Coefficient (GEFMCC)\n')
+        file.write(f'Calculation time: {final_str_time}\n\n')
+
+        for item in result_dict.keys():
+            for key, value in result_dict[item].items():
+                file.write(f'{key}\t{value:.6f}\n')
+            avg_value = sum(result_dict[item].values()) / len(result_dict[item])
+            file.write(f'average_{item}\t{avg_value:.6f}\n\n')
+
+    print('---------------------')
+    print(f'Final file {final_file_name} saved')
+    print(f'Total calculation time {final_str_time}')
 
 
 def single_calc_gefmcc(conf: dict):
@@ -112,4 +122,4 @@ def single_calc_gefmcc(conf: dict):
 if __name__ == '__main__':
     general_calculation_all_parameters(base_config)
     # or
-    # single_calc_gefmcc(base_config)
+    #single_calc_gefmcc(base_config)
